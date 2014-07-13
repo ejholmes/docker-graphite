@@ -1,0 +1,62 @@
+#!/bin/sh
+
+set -e
+
+apt-get update
+apt-get install -y \
+  build-essential \
+  expect \
+  nginx \
+  curl \
+  unzip \
+  libcairo2-dev \
+  python-pip \
+  python-dev \
+  python-flup \
+  python-ldap \
+  libcairo2 \
+  python-cairo \
+  git
+
+# Install graphite
+cd /tmp
+curl -k -L https://github.com/graphite-project/graphite-web/archive/0.9.12.zip > graphite.zip
+unzip graphite.zip && rm graphite.zip
+ln -s graphite-web-0.9.12 graphite
+cd graphite
+pip install -r requirements.txt
+python ./setup.py install
+
+cat << EOF > /tmp/graphite_syncdb
+#!/usr/bin/env expect
+
+set timeout -1
+spawn python /opt/graphite/webapp/graphite/manage.py syncdb
+
+expect "Would you like to create one now" {
+  send "yes\r"
+}
+
+expect "Username *:" {
+  send "root\r"
+}
+
+expect "E-mail address:" {
+  send "root.graphite@mailinator.com\r"
+}
+
+expect "Password:" {
+  send "root\r"
+}
+
+expect "Password *:" {
+  send "root\r"
+}
+
+expect "Superuser created successfully"
+EOF
+chmod 775 /tmp/graphite_syncdb
+/tmp/graphite_syncdb
+rm /tmp/graphite_syncdb
+
+cp /opt/graphite/conf/graphite.wsgi.example /opt/graphite/conf/graphite_wsgi.py
