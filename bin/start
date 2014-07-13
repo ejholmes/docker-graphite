@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd /opt/graphite/conf
-gunicorn -b '0.0.0.0:80' graphite_wsg:application
+gunicorn -b '0.0.0.0:80' graphite_wsgi:application
